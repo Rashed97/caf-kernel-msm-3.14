@@ -1110,8 +1110,8 @@ static int netlink_insert(struct sock *sk, u32 portid)
 
 	lock_sock(sk);
 
-	err = -EBUSY;
-	if (nlk_sk(sk)->portid)
+	err = nlk_sk(sk)->portid == portid ? 0 : -EBUSY;
+	if (nlk_sk(sk)->bound)
 		goto err;
 
 	err = -ENOMEM;
@@ -1131,9 +1131,13 @@ static int netlink_insert(struct sock *sk, u32 portid)
 			err = -EOVERFLOW;
 		if (err == -EEXIST)
 			err = -EADDRINUSE;
-		nlk_sk(sk)->portid = 0;
 		sock_put(sk);
+		goto err;
 	}
+
+	/* We need to ensure that the socket is hashed and visible. */
+	smp_wmb();
+	nlk_sk(sk)->bound = portid;
 
 err:
 	release_sock(sk);
@@ -1519,6 +1523,7 @@ static int netlink_bind(struct socket *sock, struct sockaddr *addr,
 	struct sockaddr_nl *nladdr = (struct sockaddr_nl *)addr;
 	int err;
 	long unsigned int groups = nladdr->nl_groups;
+	bool bound;
 
 	if (addr_len < sizeof(struct sockaddr_nl))
 		return -EINVAL;
@@ -1535,9 +1540,14 @@ static int netlink_bind(struct socket *sock, struct sockaddr *addr,
 			return err;
 	}
 
-	if (nlk->portid)
+	bound = nlk->bound;
+	if (bound) {
+		/* Ensure nlk->portid is up-to-date. */
+		smp_rmb();
+
 		if (nladdr->nl_pid != nlk->portid)
 			return -EINVAL;
+	}
 
 	if (nlk->netlink_bind && groups) {
 		int group;
@@ -1553,7 +1563,10 @@ static int netlink_bind(struct socket *sock, struct sockaddr *addr,
 		}
 	}
 
-	if (!nlk->portid) {
+	/* No need for barriers here as we return to user-space without
+	 * using any of the bound attributes.
+	 */
+	if (!bound) {
 		err = nladdr->nl_pid ?
 			netlink_insert(sk, nladdr->nl_pid) :
 			netlink_autobind(sock);
@@ -1601,7 +1614,10 @@ static int netlink_connect(struct socket *sock, struct sockaddr *addr,
 	    !netlink_allowed(sock, NL_CFG_F_NONROOT_SEND))
 		return -EPERM;
 
-	if (!nlk->portid)
+	/* No need for barriers here as we return to user-space without
+	 * using any of the bound attributes.
+	 */
+	if (!nlk->bound)
 		err = netlink_autobind(sock);
 
 	if (err == 0) {
@@ -2442,10 +2458,13 @@ static int netlink_sendmsg(struct socket *sock, struct msghdr *msg, size_t len)
 		dst_group = nlk->dst_group;
 	}
 
-	if (!nlk->portid) {
+	if (!nlk->bound) {
 		err = netlink_autobind(sock);
 		if (err)
 			goto out;
+	} else {
+		/* Ensure nlk is hashed and visible. */
+		smp_rmb();
 	}
 
 	/* It's a really convoluted way for userland to ask for mmaped
