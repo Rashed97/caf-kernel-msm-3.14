@@ -936,7 +936,7 @@ void ieee80211_send_pspoll(struct ieee80211_local *local,
 
 void ieee80211_send_nullfunc(struct ieee80211_local *local,
 			     struct ieee80211_sub_if_data *sdata,
-			     int powersave)
+			     bool powersave)
 {
 	struct sk_buff *skb;
 	struct ieee80211_hdr_3addr *nullfunc;
@@ -1420,7 +1420,7 @@ static void ieee80211_enable_ps(struct ieee80211_local *local,
 			  msecs_to_jiffies(conf->dynamic_ps_timeout));
 	} else {
 		if (ieee80211_hw_check(&local->hw, PS_NULLFUNC_STACK))
-			ieee80211_send_nullfunc(local, sdata, 1);
+			ieee80211_send_nullfunc(local, sdata, true);
 
 		if (ieee80211_hw_check(&local->hw, PS_NULLFUNC_STACK) &&
 		    ieee80211_hw_check(&local->hw, REPORTS_TX_ACK_STATUS))
@@ -1635,7 +1635,7 @@ void ieee80211_dynamic_ps_enable_work(struct work_struct *work)
 				  msecs_to_jiffies(
 				  local->hw.conf.dynamic_ps_timeout));
 		} else {
-			ieee80211_send_nullfunc(local, sdata, 1);
+			ieee80211_send_nullfunc(local, sdata, true);
 			/* Flush to get the tx status of nullfunc frame */
 			ieee80211_flush_queues(local, sdata, false);
 		}
@@ -2268,7 +2268,7 @@ static void ieee80211_mgd_probe_ap_send(struct ieee80211_sub_if_data *sdata)
 
 	if (ieee80211_hw_check(&sdata->local->hw, REPORTS_TX_ACK_STATUS)) {
 		ifmgd->nullfunc_failed = false;
-		ieee80211_send_nullfunc(sdata->local, sdata, 0);
+		ieee80211_send_nullfunc(sdata->local, sdata, false);
 	} else {
 		int ssid_len;
 
@@ -3437,31 +3437,27 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 					  len - baselen, false, &elems,
 					  care_about_ies, ncrc);
 
-	if (ieee80211_hw_check(&local->hw, PS_NULLFUNC_STACK)) {
-		bool directed_tim = ieee80211_check_tim(elems.tim,
-							elems.tim_len,
-							ifmgd->aid);
-		if (directed_tim) {
-			if (local->hw.conf.dynamic_ps_timeout > 0) {
-				if (local->hw.conf.flags & IEEE80211_CONF_PS) {
-					local->hw.conf.flags &= ~IEEE80211_CONF_PS;
-					ieee80211_hw_config(local,
-							    IEEE80211_CONF_CHANGE_PS);
-				}
-				ieee80211_send_nullfunc(local, sdata, 0);
-			} else if (!local->pspolling && sdata->u.mgd.powersave) {
-				local->pspolling = true;
-
-				/*
-				 * Here is assumed that the driver will be
-				 * able to send ps-poll frame and receive a
-				 * response even though power save mode is
-				 * enabled, but some drivers might require
-				 * to disable power save here. This needs
-				 * to be investigated.
-				 */
-				ieee80211_send_pspoll(local, sdata);
+	if (ieee80211_hw_check(&local->hw, PS_NULLFUNC_STACK) &&
+	    ieee80211_check_tim(elems.tim, elems.tim_len, ifmgd->aid)) {
+		if (local->hw.conf.dynamic_ps_timeout > 0) {
+			if (local->hw.conf.flags & IEEE80211_CONF_PS) {
+				local->hw.conf.flags &= ~IEEE80211_CONF_PS;
+				ieee80211_hw_config(local,
+						    IEEE80211_CONF_CHANGE_PS);
 			}
+			ieee80211_send_nullfunc(local, sdata, false);
+		} else if (!local->pspolling && sdata->u.mgd.powersave) {
+			local->pspolling = true;
+
+			/*
+			 * Here is assumed that the driver will be
+			 * able to send ps-poll frame and receive a
+			 * response even though power save mode is
+			 * enabled, but some drivers might require
+			 * to disable power save here. This needs
+			 * to be investigated.
+			 */
+			ieee80211_send_pspoll(local, sdata);
 		}
 	}
 
