@@ -657,7 +657,6 @@ static int arp_process(struct net *net, struct sock *sk, struct sk_buff *skb)
 	u16 dev_type = dev->type;
 	int addr_type;
 	struct neighbour *n;
-	struct net *net = dev_net(dev);
 	struct dst_entry *reply_dst = NULL;
 	bool is_garp = false;
 
