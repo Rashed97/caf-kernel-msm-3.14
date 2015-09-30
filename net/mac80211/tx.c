@@ -3520,6 +3520,9 @@ struct sk_buff *ieee80211_beacon_get_tim(struct ieee80211_hw *hw,
 	struct ieee80211_supported_band *sband;
 	int shift;
 
+	if (!bcn)
+		return bcn;
+
 	if (tim_offset)
 		*tim_offset = offs.tim_offset;
 
