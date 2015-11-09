@@ -67,3 +67,39 @@ void ieee80211_hwflags_sync_del(unsigned long *flags)
 			static_branch_dec(&hwflags_keys[flg]);
 	}
 }
+
+void ieee80211_test_hwflags(void)
+{
+	struct {
+		struct {
+			unsigned long flags[2];
+		} hw;
+	} _local = {};
+
+	__set_bit(IEEE80211_HW_HAS_RATE_CONTROL, _local.hw.flags);
+	__clear_bit(IEEE80211_HW_SUPPORT_FAST_XMIT, _local.hw.flags);
+
+	/* before the sync_add(), we expect only as per Kconfig */
+	if (ieee80211_local_check(&_local, HAS_RATE_CONTROL))
+		printk(KERN_DEBUG "BAD: HW rate control\n");
+	if (!ieee80211_local_check(&_local, SUPPORT_FAST_XMIT))
+		printk(KERN_DEBUG "BAD: !SUPPORT_FAST_XMIT\n");
+
+	ieee80211_hwflags_sync_add(_local.hw.flags);
+	printk(KERN_DEBUG "added\n");
+
+	/* now it should be like as per flags */
+	if (!ieee80211_local_check(&_local, HAS_RATE_CONTROL))
+		printk(KERN_DEBUG "BAD: !HW rate control\n");
+	if (ieee80211_local_check(&_local, SUPPORT_FAST_XMIT))
+		printk(KERN_DEBUG "BAD: SUPPORT_FAST_XMIT\n");
+
+	ieee80211_hwflags_sync_del(_local.hw.flags);
+	printk(KERN_DEBUG "removed\n");
+
+	/* after remove it should be as before */
+	if (ieee80211_local_check(&_local, HAS_RATE_CONTROL))
+		printk(KERN_DEBUG "BAD: HW rate control\n");
+	if (!ieee80211_local_check(&_local, SUPPORT_FAST_XMIT))
+		printk(KERN_DEBUG "BAD: !SUPPORT_FAST_XMIT\n");
+}

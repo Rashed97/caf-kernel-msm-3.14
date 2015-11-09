@@ -47,12 +47,16 @@ bool _____optimisation_missing(void);
 
 void ieee80211_hwflags_sync_add(unsigned long *flags);
 void ieee80211_hwflags_sync_del(unsigned long *flags);
+
+void ieee80211_test_hwflags(void);
 #else /* CONFIG_JUMP_LABEL */
 #define ieee80211_local_check(local, flg)	\
 	test_bit(IEEE80211_HW_##flg, local->hw.flags)
 
 static inline void ieee80211_hwflags_sync_add(unsigned long *flags) {}
 static inline void ieee80211_hwflags_sync_del(unsigned long *flags) {}
+
+static inline void ieee80211_test_hwflags(void) {}
 #endif /* CONFIG_JUMP_LABEL */
 
 #endif /* __mac80211_hwflags_h */

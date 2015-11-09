@@ -1228,6 +1228,8 @@ static int __init ieee80211_init(void)
 	if (ret)
 		goto err_netdev;
 
+	ieee80211_test_hwflags();
+
 	return 0;
  err_netdev:
 	rc80211_minstrel_ht_exit();
