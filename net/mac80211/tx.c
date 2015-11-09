@@ -211,11 +211,11 @@ ieee80211_tx_h_dynamic_ps(struct ieee80211_tx_data *tx)
 	struct ieee80211_if_managed *ifmgd;
 
 	/* driver doesn't support power save */
-	if (!ieee80211_hw_check(&local->hw, SUPPORTS_PS))
+	if (!ieee80211_local_check(local, SUPPORTS_PS))
 		return TX_CONTINUE;
 
 	/* hardware does dynamic power save */
-	if (ieee80211_hw_check(&local->hw, SUPPORTS_DYNAMIC_PS))
+	if (ieee80211_local_check(local, SUPPORTS_DYNAMIC_PS))
 		return TX_CONTINUE;
 
 	/* dynamic power save disabled */
@@ -428,7 +428,7 @@ ieee80211_tx_h_multicast_ps_buf(struct ieee80211_tx_data *tx)
 	if (ieee80211_is_probe_req(hdr->frame_control))
 		return TX_CONTINUE;
 
-	if (ieee80211_hw_check(&tx->local->hw, QUEUE_CONTROL))
+	if (ieee80211_local_check(tx->local, QUEUE_CONTROL))
 		info->hw_queue = tx->sdata->vif.cab_queue;
 
 	/* no stations in PS mode */
@@ -438,7 +438,7 @@ ieee80211_tx_h_multicast_ps_buf(struct ieee80211_tx_data *tx)
 	info->flags |= IEEE80211_TX_CTL_SEND_AFTER_DTIM;
 
 	/* device releases frame after DTIM beacon */
-	if (!ieee80211_hw_check(&tx->local->hw, HOST_BROADCAST_PS_BUFFERING))
+	if (!ieee80211_local_check(tx->local, HOST_BROADCAST_PS_BUFFERING))
 		return TX_CONTINUE;
 
 	/* buffered in mac80211 */
@@ -1184,8 +1184,8 @@ ieee80211_tx_prepare(struct ieee80211_sub_if_data *sdata,
 
 	if (tx->sta && ieee80211_is_data_qos(hdr->frame_control) &&
 	    !ieee80211_is_qos_nullfunc(hdr->frame_control) &&
-	    ieee80211_hw_check(&local->hw, AMPDU_AGGREGATION) &&
-	    !ieee80211_hw_check(&local->hw, TX_AMPDU_SETUP_IN_HW)) {
+	    ieee80211_local_check(local, AMPDU_AGGREGATION) &&
+	    !ieee80211_local_check(local, TX_AMPDU_SETUP_IN_HW)) {
 		struct tid_ampdu_tx *tid_tx;
 
 		qc = ieee80211_get_qos_ctl(hdr);
@@ -1430,7 +1430,7 @@ static bool __ieee80211_tx(struct ieee80211_local *local,
 			vif = &sdata->vif;
 			info->hw_queue =
 				vif->hw_queue[skb_get_queue_mapping(skb)];
-		} else if (ieee80211_hw_check(&local->hw, QUEUE_CONTROL)) {
+		} else if (ieee80211_local_check(local, QUEUE_CONTROL)) {
 			dev_kfree_skb(skb);
 			return true;
 		} else
@@ -1476,7 +1476,7 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 	CALL_TXH(ieee80211_tx_h_ps_buf);
 	CALL_TXH(ieee80211_tx_h_check_control_port_protocol);
 	CALL_TXH(ieee80211_tx_h_select_key);
-	if (!ieee80211_hw_check(&tx->local->hw, HAS_RATE_CONTROL))
+	if (!ieee80211_local_check(tx->local, HAS_RATE_CONTROL))
 		CALL_TXH(ieee80211_tx_h_rate_ctrl);
 
 	if (unlikely(info->flags & IEEE80211_TX_INTFL_RETRANSMISSION)) {
@@ -1491,7 +1491,7 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 	/* handlers after fragment must be aware of tx info fragmentation! */
 	CALL_TXH(ieee80211_tx_h_stats);
 	CALL_TXH(ieee80211_tx_h_encrypt);
-	if (!ieee80211_hw_check(&tx->local->hw, HAS_RATE_CONTROL))
+	if (!ieee80211_local_check(tx->local, HAS_RATE_CONTROL))
 		CALL_TXH(ieee80211_tx_h_calculate_duration);
 #undef CALL_TXH
 
@@ -1581,7 +1581,7 @@ static bool ieee80211_tx(struct ieee80211_sub_if_data *sdata,
 
 	/* set up hw_queue value early */
 	if (!(info->flags & IEEE80211_TX_CTL_TX_OFFCHAN) ||
-	    !ieee80211_hw_check(&local->hw, QUEUE_CONTROL))
+	    !ieee80211_local_check(local, QUEUE_CONTROL))
 		info->hw_queue =
 			sdata->vif.hw_queue[skb_get_queue_mapping(skb)];
 
@@ -1608,7 +1608,7 @@ static int ieee80211_skb_resize(struct ieee80211_sub_if_data *sdata,
 	}
 
 	if (skb_cloned(skb) &&
-	    (!ieee80211_hw_check(&local->hw, SUPPORTS_CLONED_SKBS) ||
+	    (!ieee80211_local_check(local, SUPPORTS_CLONED_SKBS) ||
 	     !skb_clone_writable(skb, ETH_HLEN) ||
 	     (may_encrypt && sdata->crypto_tx_tailroom_needed_cnt)))
 		I802_DEBUG_INC(local->tx_expand_skb_head_cloned);
@@ -2427,7 +2427,7 @@ void ieee80211_check_fast_xmit(struct sta_info *sta)
 	struct ieee80211_chanctx_conf *chanctx_conf;
 	__le16 fc;
 
-	if (!ieee80211_hw_check(&local->hw, SUPPORT_FAST_XMIT))
+	if (!ieee80211_local_check(local, SUPPORT_FAST_XMIT))
 		return;
 
 	/* Locking here protects both the pointer itself, and against concurrent
@@ -2443,8 +2443,8 @@ void ieee80211_check_fast_xmit(struct sta_info *sta)
 	 * cleared/changed already.
 	 */
 	spin_lock_bh(&sta->lock);
-	if (ieee80211_hw_check(&local->hw, SUPPORTS_PS) &&
-	    !ieee80211_hw_check(&local->hw, SUPPORTS_DYNAMIC_PS) &&
+	if (ieee80211_local_check(local, SUPPORTS_PS) &&
+	    !ieee80211_local_check(local, SUPPORTS_DYNAMIC_PS) &&
 	    sdata->vif.type == NL80211_IFTYPE_STATION)
 		goto out;
 
@@ -2797,7 +2797,7 @@ static bool ieee80211_xmit_fast(struct ieee80211_sub_if_data *sdata,
 	if (fast_tx->key)
 		info->control.hw_key = &fast_tx->key->conf;
 
-	if (!ieee80211_hw_check(&local->hw, HAS_RATE_CONTROL)) {
+	if (!ieee80211_local_check(local, HAS_RATE_CONTROL)) {
 		tx.skb = skb;
 		r = ieee80211_tx_h_rate_ctrl(&tx);
 		skb = tx.skb;
@@ -3529,7 +3529,7 @@ struct sk_buff *ieee80211_beacon_get_tim(struct ieee80211_hw *hw,
 	if (tim_length)
 		*tim_length = offs.tim_length;
 
-	if (ieee80211_hw_check(hw, BEACON_TX_STATUS) ||
+	if (ieee80211_local_check(hw_to_local(hw), BEACON_TX_STATUS) ||
 	    !hw_to_local(hw)->monitors)
 		return bcn;
 
@@ -3839,7 +3839,7 @@ int ieee80211_reserve_tid(struct ieee80211_sta *pubsta, u8 tid)
 	synchronize_net();
 
 	/* Tear down BA sessions so we stop aggregating on this TID */
-	if (ieee80211_hw_check(&local->hw, AMPDU_AGGREGATION)) {
+	if (ieee80211_local_check(local, AMPDU_AGGREGATION)) {
 		set_sta_flag(sta, WLAN_STA_BLOCK_BA);
 		__ieee80211_stop_tx_ba_session(sta, tid,
 					       AGG_STOP_LOCAL_REQUEST);
@@ -3853,7 +3853,7 @@ int ieee80211_reserve_tid(struct ieee80211_sta *pubsta, u8 tid)
 	ieee80211_wake_vif_queues(local, sdata,
 				  IEEE80211_QUEUE_STOP_REASON_RESERVE_TID);
 
-	if (ieee80211_hw_check(&local->hw, AMPDU_AGGREGATION))
+	if (ieee80211_local_check(local, AMPDU_AGGREGATION))
 		clear_sta_flag(sta, WLAN_STA_BLOCK_BA);
 
 	ret = 0;

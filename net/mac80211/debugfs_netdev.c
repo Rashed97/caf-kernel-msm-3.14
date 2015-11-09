@@ -451,7 +451,7 @@ static ssize_t ieee80211_if_fmt_tdls_wider_bw(
 	const struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
 	bool tdls_wider_bw;
 
-	tdls_wider_bw = ieee80211_hw_check(&sdata->local->hw, TDLS_WIDER_BW) &&
+	tdls_wider_bw = ieee80211_local_check(sdata->local, TDLS_WIDER_BW) &&
 			!ifmgd->tdls_wider_bw_prohibited;
 
 	return snprintf(buf, buflen, "%d\n", tdls_wider_bw);

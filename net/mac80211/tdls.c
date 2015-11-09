@@ -44,7 +44,7 @@ static void ieee80211_tdls_add_ext_capab(struct ieee80211_sub_if_data *sdata,
 	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
 	bool chan_switch = local->hw.wiphy->features &
 			   NL80211_FEATURE_TDLS_CHANNEL_SWITCH;
-	bool wider_band = ieee80211_hw_check(&local->hw, TDLS_WIDER_BW) &&
+	bool wider_band = ieee80211_local_check(local, TDLS_WIDER_BW) &&
 			  !ifmgd->tdls_wider_bw_prohibited;
 	enum ieee80211_band band = ieee80211_get_sdata_band(sdata);
 	struct ieee80211_supported_band *sband = local->hw.wiphy->bands[band];
@@ -1022,7 +1022,7 @@ ieee80211_tdls_prep_mgmt_packet(struct wiphy *wiphy, struct net_device *dev,
 	 * packet through the AP.
 	 */
 	if ((action_code == WLAN_TDLS_TEARDOWN) &&
-	    ieee80211_hw_check(&sdata->local->hw, REPORTS_TX_ACK_STATUS)) {
+	    ieee80211_local_check(sdata->local, REPORTS_TX_ACK_STATUS)) {
 		bool try_resend; /* Should we keep skb for possible resend */
 
 		/* If not sending directly to peer - no point in keeping skb */

@@ -182,7 +182,7 @@ static void ieee80211_frame_acked(struct sta_info *sta, struct sk_buff *skb)
 	struct ieee80211_local *local = sta->local;
 	struct ieee80211_sub_if_data *sdata = sta->sdata;
 
-	if (ieee80211_hw_check(&local->hw, REPORTS_TX_ACK_STATUS))
+	if (ieee80211_local_check(local, REPORTS_TX_ACK_STATUS))
 		sta->rx_stats.last_rx = jiffies;
 
 	if (ieee80211_is_data_qos(mgmt->frame_control)) {
@@ -415,7 +415,7 @@ static void ieee80211_tdls_td_tx_handle(struct ieee80211_local *local,
 
 	if (is_teardown) {
 		/* This mechanism relies on being able to get ACKs */
-		WARN_ON(!ieee80211_hw_check(&local->hw, REPORTS_TX_ACK_STATUS));
+		WARN_ON(!ieee80211_local_check(local, REPORTS_TX_ACK_STATUS));
 
 		/* Check if peer has ACKed */
 		if (flags & IEEE80211_TX_STAT_ACK) {
@@ -783,7 +783,7 @@ void ieee80211_tx_status(struct ieee80211_hw *hw, struct sk_buff *skb)
 					ieee80211_get_qos_ctl(hdr),
 					sta, true, acked);
 
-		if (ieee80211_hw_check(&local->hw, HAS_RATE_CONTROL) &&
+		if (ieee80211_local_check(local, HAS_RATE_CONTROL) &&
 		    (ieee80211_is_data(hdr->frame_control)) &&
 		    (rates_idx != -1))
 			sta->tx_stats.last_rate =
@@ -853,11 +853,11 @@ void ieee80211_tx_status(struct ieee80211_hw *hw, struct sk_buff *skb)
 			ieee80211_frame_acked(sta, skb);
 
 		if ((sta->sdata->vif.type == NL80211_IFTYPE_STATION) &&
-		    ieee80211_hw_check(&local->hw, REPORTS_TX_ACK_STATUS))
+		    ieee80211_local_check(local, REPORTS_TX_ACK_STATUS))
 			ieee80211_sta_tx_notify(sta->sdata, (void *) skb->data,
 						acked, info->status.tx_time);
 
-		if (ieee80211_hw_check(&local->hw, REPORTS_TX_ACK_STATUS)) {
+		if (ieee80211_local_check(local, REPORTS_TX_ACK_STATUS)) {
 			if (info->flags & IEEE80211_TX_STAT_ACK) {
 				if (sta->status_stats.lost_packets)
 					sta->status_stats.lost_packets = 0;
@@ -906,7 +906,7 @@ void ieee80211_tx_status(struct ieee80211_hw *hw, struct sk_buff *skb)
 	}
 
 	if (ieee80211_is_nullfunc(fc) && ieee80211_has_pm(fc) &&
-	    ieee80211_hw_check(&local->hw, REPORTS_TX_ACK_STATUS) &&
+	    ieee80211_local_check(local, REPORTS_TX_ACK_STATUS) &&
 	    !(info->flags & IEEE80211_TX_CTL_INJECTED) &&
 	    local->ps_sdata && !(local->scanning)) {
 		if (info->flags & IEEE80211_TX_STAT_ACK) {
