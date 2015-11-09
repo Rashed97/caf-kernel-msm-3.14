@@ -1289,7 +1289,7 @@ int iwl_mvm_mac_ctxt_remove(struct iwl_mvm *mvm, struct ieee80211_vif *vif)
 	mvmvif->uploaded = false;
 
 	if (vif->type == NL80211_IFTYPE_MONITOR)
-		__clear_bit(IEEE80211_HW_RX_INCLUDES_FCS, mvm->hw->flags);
+		ieee80211_hw_clear(mvm->hw, RX_INCLUDES_FCS);
 
 	return 0;
 }

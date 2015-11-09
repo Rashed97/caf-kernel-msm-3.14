@@ -1375,7 +1375,7 @@ static void adm8211_configure_filter(struct ieee80211_hw *dev,
 	if (priv->nar & ADM8211_NAR_PR)
 		ieee80211_hw_set(dev, RX_INCLUDES_FCS);
 	else
-		__clear_bit(IEEE80211_HW_RX_INCLUDES_FCS, dev->flags);
+		ieee80211_hw_clear(dev, RX_INCLUDES_FCS);
 
 	if (*total_flags & FIF_BCN_PRBRESP_PROMISC)
 		adm8211_set_bssid(dev, bcast);

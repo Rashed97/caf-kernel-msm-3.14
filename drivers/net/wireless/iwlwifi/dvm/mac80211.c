@@ -1356,7 +1356,7 @@ static int iwlagn_mac_add_interface(struct ieee80211_hw *hw,
 	if (vif->type == NL80211_IFTYPE_MONITOR)
 		ieee80211_hw_set(priv->hw, RX_INCLUDES_FCS);
 	else
-		__clear_bit(IEEE80211_HW_RX_INCLUDES_FCS, priv->hw->flags);
+		ieee80211_hw_clear(priv->hw, RX_INCLUDES_FCS);
 
 	err = iwl_setup_interface(priv, ctx);
 	if (!err || reset)
