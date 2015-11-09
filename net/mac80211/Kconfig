@@ -318,3 +318,5 @@ config MAC80211_STA_HASH_MAX_SIZE
 	  connect more stations than the number selected here.)
 
 	  If unsure, leave the default of 0.
+
+source "net/mac80211/Kconfig.hwflags"

@@ -2078,19 +2078,24 @@ static inline bool _ieee80211_hw_check(struct ieee80211_hw *hw,
 }
 #define ieee80211_hw_check(hw, flg)	_ieee80211_hw_check(hw, IEEE80211_HW_##flg)
 
-static inline void _ieee80211_hw_set(struct ieee80211_hw *hw,
-				     enum ieee80211_hw_flags flg)
+#ifdef CONFIG_JUMP_LABEL
+void ieee80211_hw_mod_flag(struct ieee80211_hw *hw,
+			   enum ieee80211_hw_flags flg, bool set);
+#else
+static inline void ieee80211_hw_mod_flag(struct ieee80211_hw *hw,
+					 enum ieee80211_hw_flags flg, bool set)
 {
-	__set_bit(flg, hw->flags);
+	if (set)
+		__set_bit(flg, hw->flags);
+	else
+		__clear_bit(flg, hw->flags);
 }
-#define ieee80211_hw_set(hw, flg)	_ieee80211_hw_set(hw, IEEE80211_HW_##flg)
+#endif /* CONFIG_JUMP_LABEL */
 
-static inline void _ieee80211_hw_clear(struct ieee80211_hw *hw,
-				       enum ieee80211_hw_flags flg)
-{
-	__clear_bit(flg, hw->flags);
-}
-#define ieee80211_hw_clear(hw, flg)	_ieee80211_hw_clear(hw, IEEE80211_HW_##flg)
+#define ieee80211_hw_set(hw, flg)	\
+	ieee80211_hw_mod_flag(hw, IEEE80211_HW_##flg, true)
+#define ieee80211_hw_clear(hw, flg)	\
+	ieee80211_hw_mod_flag(hw, IEEE80211_HW_##flg, false)
 
 /**
  * struct ieee80211_scan_request - hw scan request

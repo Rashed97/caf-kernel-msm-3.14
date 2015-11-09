@@ -33,6 +33,7 @@
 #include "key.h"
 #include "sta_info.h"
 #include "debug.h"
+#include "hwflags.h"
 
 extern const struct cfg80211_ops mac80211_config_ops;
 
@@ -1121,6 +1122,8 @@ struct ieee80211_local {
 
 	bool wiphy_ciphers_allocated;
 
+	bool registered;
+
 	bool use_chanctx;
 
 	/* protects the aggregated multicast list and filter calls */
@@ -1356,15 +1359,6 @@ struct ieee80211_local {
 	struct work_struct tdls_chsw_work;
 	struct sk_buff_head skb_queue_tdls_chsw;
 };
-
-static inline bool _ieee80211_local_check(struct ieee80211_local *local,
-					  enum ieee80211_hw_flags flg)
-{
-	return test_bit(flg, local->hw.flags);
-}
-
-#define ieee80211_local_check(local, flg)	\
-	_ieee80211_local_check(local, IEEE80211_HW_##flg)
 
 static inline struct ieee80211_sub_if_data *
 IEEE80211_DEV_TO_SUB_IF(struct net_device *dev)

@@ -1095,6 +1095,9 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 		goto fail_ifa6;
 #endif
 
+	ieee80211_hwflags_sync_add(local->hw.flags);
+	local->registered = true;
+
 	return 0;
 
 #if IS_ENABLED(CONFIG_IPV6)
@@ -1169,6 +1172,9 @@ void ieee80211_unregister_hw(struct ieee80211_hw *hw)
 	ieee80211_wep_free(local);
 	ieee80211_led_exit(local);
 	kfree(local->int_scan_req);
+
+	local->registered = false;
+	ieee80211_hwflags_sync_del(local->hw.flags);
 }
 EXPORT_SYMBOL(ieee80211_unregister_hw);
 

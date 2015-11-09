@@ -1,0 +1,129 @@
+/*
+ * Copyright 2015	Intel Deutschland GmbH
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+#include <linux/jump_label.h>
+#include <net/mac80211.h>
+#include "ieee80211_i.h"
+
+struct static_key_false hwflags_keys[NUM_IEEE80211_HW_FLAGS] = {
+	[0 ... NUM_IEEE80211_HW_FLAGS - 1] = STATIC_KEY_FALSE_INIT,
+};
+
+static s8 hwflags_defstate[] = {
+	[IEEE80211_HW_HAS_RATE_CONTROL] =
+		HWFLAGS_DEFSTATE_HAS_RATE_CONTROL,
+	[IEEE80211_HW_RX_INCLUDES_FCS] =
+		HWFLAGS_DEFSTATE_RX_INCLUDES_FCS,
+	[IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING] =
+		HWFLAGS_DEFSTATE_HOST_BROADCAST_PS_BUFFERING,
+	[IEEE80211_HW_SIGNAL_UNSPEC] =
+		HWFLAGS_DEFSTATE_SIGNAL_UNSPEC,
+	[IEEE80211_HW_SIGNAL_DBM] =
+		HWFLAGS_DEFSTATE_SIGNAL_DBM,
+	[IEEE80211_HW_NEED_DTIM_BEFORE_ASSOC] =
+		HWFLAGS_DEFSTATE_NEED_DTIM_BEFORE_ASSOC,
+	[IEEE80211_HW_SPECTRUM_MGMT] =
+		HWFLAGS_DEFSTATE_SPECTRUM_MGMT,
+	[IEEE80211_HW_AMPDU_AGGREGATION] =
+		HWFLAGS_DEFSTATE_AMPDU_AGGREGATION,
+	[IEEE80211_HW_SUPPORTS_PS] =
+		HWFLAGS_DEFSTATE_SUPPORTS_PS,
+	[IEEE80211_HW_PS_NULLFUNC_STACK] =
+		HWFLAGS_DEFSTATE_PS_NULLFUNC_STACK,
+	[IEEE80211_HW_SUPPORTS_DYNAMIC_PS] =
+		HWFLAGS_DEFSTATE_SUPPORTS_DYNAMIC_PS,
+	[IEEE80211_HW_MFP_CAPABLE] =
+		HWFLAGS_DEFSTATE_MFP_CAPABLE,
+	[IEEE80211_HW_WANT_MONITOR_VIF] =
+		HWFLAGS_DEFSTATE_WANT_MONITOR_VIF,
+	[IEEE80211_HW_NO_AUTO_VIF] =
+		HWFLAGS_DEFSTATE_NO_AUTO_VIF,
+	[IEEE80211_HW_SW_CRYPTO_CONTROL] =
+		HWFLAGS_DEFSTATE_SW_CRYPTO_CONTROL,
+	[IEEE80211_HW_SUPPORT_FAST_XMIT] =
+		HWFLAGS_DEFSTATE_SUPPORT_FAST_XMIT,
+	[IEEE80211_HW_REPORTS_TX_ACK_STATUS] =
+		HWFLAGS_DEFSTATE_REPORTS_TX_ACK_STATUS,
+	[IEEE80211_HW_CONNECTION_MONITOR] =
+		HWFLAGS_DEFSTATE_CONNECTION_MONITOR,
+	[IEEE80211_HW_QUEUE_CONTROL] =
+		HWFLAGS_DEFSTATE_QUEUE_CONTROL,
+	[IEEE80211_HW_SUPPORTS_PER_STA_GTK] =
+		HWFLAGS_DEFSTATE_SUPPORTS_PER_STA_GTK,
+	[IEEE80211_HW_AP_LINK_PS] =
+		HWFLAGS_DEFSTATE_AP_LINK_PS,
+	[IEEE80211_HW_TX_AMPDU_SETUP_IN_HW] =
+		HWFLAGS_DEFSTATE_TX_AMPDU_SETUP_IN_HW,
+	[IEEE80211_HW_SUPPORTS_RC_TABLE] =
+		HWFLAGS_DEFSTATE_SUPPORTS_RC_TABLE,
+	[IEEE80211_HW_P2P_DEV_ADDR_FOR_INTF] =
+		HWFLAGS_DEFSTATE_P2P_DEV_ADDR_FOR_INTF,
+	[IEEE80211_HW_TIMING_BEACON_ONLY] =
+		HWFLAGS_DEFSTATE_TIMING_BEACON_ONLY,
+	[IEEE80211_HW_SUPPORTS_HT_CCK_RATES] =
+		HWFLAGS_DEFSTATE_SUPPORTS_HT_CCK_RATES,
+	[IEEE80211_HW_CHANCTX_STA_CSA] =
+		HWFLAGS_DEFSTATE_CHANCTX_STA_CSA,
+	[IEEE80211_HW_SUPPORTS_CLONED_SKBS] =
+		HWFLAGS_DEFSTATE_SUPPORTS_CLONED_SKBS,
+	[IEEE80211_HW_SINGLE_SCAN_ON_ALL_BANDS] =
+		HWFLAGS_DEFSTATE_SINGLE_SCAN_ON_ALL_BANDS,
+	[IEEE80211_HW_TDLS_WIDER_BW] =
+		HWFLAGS_DEFSTATE_TDLS_WIDER_BW,
+	[IEEE80211_HW_SUPPORTS_AMSDU_IN_AMPDU] =
+		HWFLAGS_DEFSTATE_SUPPORTS_AMSDU_IN_AMPDU,
+	[IEEE80211_HW_BEACON_TX_STATUS] =
+		HWFLAGS_DEFSTATE_BEACON_TX_STATUS,
+};
+
+void ieee80211_hw_mod_flag(struct ieee80211_hw *hw,
+			   enum ieee80211_hw_flags flg, bool set)
+{
+	struct ieee80211_local *local = hw_to_local(hw);
+
+	if (set) {
+		if (test_bit(flg, hw->flags))
+			return;
+		__set_bit(flg, hw->flags);
+	} else {
+		if (!test_bit(flg, hw->flags))
+			return;
+		__clear_bit(flg, hw->flags);
+	}
+
+	if (!local->registered)
+		return;
+
+	if (hwflags_defstate[flg] < 0)
+		return;
+
+	if (hwflags_defstate[flg] == !!test_bit(flg, hw->flags))
+		static_branch_dec(&hwflags_keys[flg]);
+	else
+		static_branch_inc(&hwflags_keys[flg]);
+}
+EXPORT_SYMBOL_GPL(ieee80211_hw_mod_flag);
+
+void ieee80211_hwflags_sync_add(unsigned long *flags)
+{
+	unsigned int flg;
+
+	for (flg = 0; flg < NUM_IEEE80211_HW_FLAGS; flg++) {
+		if (hwflags_defstate[flg] != !!test_bit(flg, flags))
+			static_branch_inc(&hwflags_keys[flg]);
+	}
+}
+
+void ieee80211_hwflags_sync_del(unsigned long *flags)
+{
+	unsigned int flg;
+
+	for (flg = 0; flg < NUM_IEEE80211_HW_FLAGS; flg++) {
+		if (hwflags_defstate[flg] != !!test_bit(flg, flags))
+			static_branch_dec(&hwflags_keys[flg]);
+	}
+}
