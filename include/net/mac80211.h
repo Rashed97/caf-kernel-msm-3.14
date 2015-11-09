@@ -2071,12 +2071,53 @@ struct ieee80211_hw {
 	int txq_ac_max_pending;
 };
 
-static inline bool _ieee80211_hw_check(struct ieee80211_hw *hw,
-				       enum ieee80211_hw_flags flg)
-{
-	return test_bit(flg, hw->flags);
-}
-#define ieee80211_hw_check(hw, flg)	_ieee80211_hw_check(hw, IEEE80211_HW_##flg)
+enum hwflags_states {
+/*
+ * _dyn, _on and _off can each be 0 or 1
+ * _dyn = 1: the entire expression becomes 0 * (...), result is -1
+ * _dyn = 0:
+ *    _on==_off: _on^_off becomes 0, so the result is -1
+ *    _off==1: 1+_on is 1, so the result is 0
+ *    _on==1: 1+_on is 2, so the result is 1
+ *
+ * The result is tested below in ieee80211_hw_check():
+ *   -1: the hw flag is checked normally,
+ *    0: the hw flag is always off
+ *    1: the hw flag is always on
+ *
+ * Based on this the compiler will removed unused code for the two
+ * cases where the hw flag is known at compile time.
+ */
+#define __DEFINE_HWFLAG(_flg, _dyn, _on, _off)				\
+	HWFLAG_STATE_##_flg = -1 + (!(_dyn)) * (((_on) ^ (_off)) * (1 + (_on))),
+#define DEFINE_HWFLAG(_flg)						\
+	__DEFINE_HWFLAG(_flg,						\
+			IS_ENABLED(CONFIG_MAC80211_HW_##_flg##_DYN) ||	\
+			IS_ENABLED(CONFIG_MAC80211_DRIVER_NO_HWFLAGS_OPT),\
+			CONFIG_MAC80211_HW_##_flg > 0,			\
+			CONFIG_MAC80211_HW_##_flg < CONFIG_MAC80211_NUM_DRIVERS)
+#include <net/mac80211-hwflags.h>
+#undef DEFINE_HWFLAG
+};
+
+bool _____optimisation_missing(void);
+
+#define ieee80211_hw_check(hw, flg)					\
+({									\
+	enum ieee80211_hw_flags flag = IEEE80211_HW_##flg;		\
+	bool result;							\
+									\
+	if (HWFLAG_STATE_##flg == -1)					\
+		result = test_bit(flag, (hw)->flags);			\
+	else if (HWFLAG_STATE_##flg == 1)				\
+		result = true;						\
+	else if (HWFLAG_STATE_##flg == 0)				\
+		result = false;						\
+	else								\
+		result = _____optimisation_missing();			\
+									\
+	result;								\
+})
 
 static inline void _ieee80211_hw_set(struct ieee80211_hw *hw,
 				     enum ieee80211_hw_flags flg)

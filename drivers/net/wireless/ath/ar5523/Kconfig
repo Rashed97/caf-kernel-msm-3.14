@@ -1,6 +1,8 @@
 config AR5523
        tristate "Atheros AR5523 wireless driver support"
        depends on MAC80211 && USB
+	increment MAC80211_NUM_DRIVERS
+	select MAC80211_DRIVER_NO_HWFLAGS_OPT
        select ATH_COMMON
        select FW_LOADER
        ---help---

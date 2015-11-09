@@ -35,6 +35,8 @@ config PCMCIA_RAYCS
 config LIBERTAS_THINFIRM
 	tristate "Marvell 8xxx Libertas WLAN driver support with thin firmware"
 	depends on MAC80211
+	increment MAC80211_NUM_DRIVERS
+	select MAC80211_DRIVER_NO_HWFLAGS_OPT
 	select FW_LOADER
 	---help---
 	  A library for Marvell Libertas 8xxx devices using thinfirm.
@@ -109,6 +111,8 @@ config PCMCIA_ATMEL
 config AT76C50X_USB
         tristate "Atmel at76c503/at76c505/at76c505a USB cards"
         depends on MAC80211 && USB
+	increment MAC80211_NUM_DRIVERS
+	select MAC80211_DRIVER_NO_HWFLAGS_OPT
         select FW_LOADER
         ---help---
           Enable support for USB Wireless devices using Atmel at76c503,
@@ -217,6 +221,8 @@ config USB_NET_RNDIS_WLAN
 config ADM8211
 	tristate "ADMtek ADM8211 support"
 	depends on MAC80211 && PCI
+	increment MAC80211_NUM_DRIVERS
+	select MAC80211_DRIVER_NO_HWFLAGS_OPT
 	select CRC32
 	select EEPROM_93CX6
 	---help---
@@ -246,6 +252,18 @@ source "drivers/net/wireless/realtek/rtl818x/Kconfig"
 config MAC80211_HWSIM
 	tristate "Simulated radio testing tool for mac80211"
 	depends on MAC80211
+	increment MAC80211_NUM_DRIVERS
+	increment MAC80211_HW_SUPPORT_FAST_XMIT
+	increment MAC80211_HW_CHANCTX_STA_CSA
+	increment MAC80211_HW_SUPPORTS_HT_CCK_RATES
+	increment MAC80211_HW_QUEUE_CONTROL
+	increment MAC80211_HW_WANT_MONITOR_VIF
+	increment MAC80211_HW_AMPDU_AGGREGATION
+	increment MAC80211_HW_MFP_CAPABLE
+	increment MAC80211_HW_SIGNAL_DBM
+	increment MAC80211_HW_TDLS_WIDER_BW
+	select MAC80211_HW_NO_AUTO_VIF_DYN
+	select MAC80211_HW_SUPPORTS_RC_TABLE_DYN
 	---help---
 	  This driver is a developer testing tool that can be used to test
 	  IEEE 802.11 networking stack (mac80211) functionality. This is not
@@ -259,6 +277,8 @@ config MAC80211_HWSIM
 config MWL8K
 	tristate "Marvell 88W8xxx PCI/PCIe Wireless support"
 	depends on MAC80211 && PCI
+	increment MAC80211_NUM_DRIVERS
+	select MAC80211_DRIVER_NO_HWFLAGS_OPT
 	---help---
 	  This driver supports Marvell TOPDOG 802.11 wireless cards.
 

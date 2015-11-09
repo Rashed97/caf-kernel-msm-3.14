@@ -1,6 +1,8 @@
 menuconfig RTL_CARDS
 	tristate "Realtek rtlwifi family of devices"
 	depends on MAC80211 && (PCI || USB)
+	increment MAC80211_NUM_DRIVERS
+	select MAC80211_DRIVER_NO_HWFLAGS_OPT
 	default y
 	---help---
 	  This option will enable support for the Realtek mac80211-based

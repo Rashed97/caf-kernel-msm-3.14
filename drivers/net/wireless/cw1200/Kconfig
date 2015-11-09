@@ -1,6 +1,8 @@
 config CW1200
 	tristate "CW1200 WLAN support"
 	depends on MAC80211 && CFG80211
+	increment MAC80211_NUM_DRIVERS
+	select MAC80211_DRIVER_NO_HWFLAGS_OPT
 	help
 	  This is a driver for the ST-E CW1100 & CW1200 WLAN chipsets.
 	  This option just enables the driver core, see below for

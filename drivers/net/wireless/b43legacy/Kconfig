@@ -1,6 +1,8 @@
 config B43LEGACY
 	tristate "Broadcom 43xx-legacy wireless support (mac80211 stack)"
 	depends on SSB_POSSIBLE && MAC80211 && HAS_DMA
+	increment MAC80211_NUM_DRIVERS
+	select MAC80211_DRIVER_NO_HWFLAGS_OPT
 	select SSB
 	select FW_LOADER
 	---help---

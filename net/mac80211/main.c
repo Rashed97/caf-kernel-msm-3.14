@@ -789,6 +789,28 @@ static int ieee80211_init_cipher_suites(struct ieee80211_local *local)
 	return 0;
 }
 
+static s8 hwflags_state[] = {
+#define DEFINE_HWFLAG(_flg)	\
+	[IEEE80211_HW_##_flg] = HWFLAG_STATE_##_flg,
+#include <net/mac80211-hwflags.h>
+#undef DEFINE_HWFLAG
+};
+
+static int ieee80211_hwflags_check(unsigned long *flags)
+{
+	unsigned int flg;
+
+	for (flg = 0; flg < NUM_IEEE80211_HW_FLAGS; flg++) {
+		if (hwflags_state[flg] == -1)
+			continue;
+		if (WARN(hwflags_state[flg] != !!test_bit(flg, flags),
+			 "hw flag %d doesn't match Kconfig\n", flg))
+			return -EINVAL;
+	}
+
+	return 0;
+}
+
 int ieee80211_register_hw(struct ieee80211_hw *hw)
 {
 	struct ieee80211_local *local = hw_to_local(hw);
@@ -798,6 +820,9 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 	bool supp_ht, supp_vht;
 	netdev_features_t feature_whitelist;
 	struct cfg80211_chan_def dflt_chandef = {};
+
+	if (ieee80211_hwflags_check(local->hw.flags))
+		return -EINVAL;
 
 	if (ieee80211_hw_check(hw, QUEUE_CONTROL) &&
 	    (local->hw.offchannel_tx_hw_queue == IEEE80211_INVAL_HW_QUEUE ||

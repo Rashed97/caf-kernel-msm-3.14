@@ -1,6 +1,8 @@
 config VT6656
 	tristate "VIA Technologies VT6656 support"
 	depends on MAC80211 && USB && WLAN && m
+	increment MAC80211_NUM_DRIVERS
+	select MAC80211_DRIVER_NO_HWFLAGS_OPT
 	select FW_LOADER
 	---help---
 	This is a vendor-written driver for VIA VT6656.

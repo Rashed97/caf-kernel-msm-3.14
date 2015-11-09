@@ -4,6 +4,8 @@
 config RTL8180
 	tristate "Realtek 8180/8185/8187SE PCI support"
 	depends on MAC80211 && PCI
+	increment MAC80211_NUM_DRIVERS
+	select MAC80211_DRIVER_NO_HWFLAGS_OPT
 	select EEPROM_93CX6
 	---help---
 	  This is a driver for RTL8180, RTL8185 and RTL8187SE based cards.
@@ -60,6 +62,8 @@ config RTL8180
 config RTL8187
 	tristate "Realtek 8187 and 8187B USB support"
 	depends on MAC80211 && USB
+	increment MAC80211_NUM_DRIVERS
+	select MAC80211_DRIVER_NO_HWFLAGS_OPT
 	select EEPROM_93CX6
 	---help---
 	  This is a driver for RTL8187 and RTL8187B based cards.

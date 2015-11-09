@@ -1,6 +1,8 @@
 config VT6655
    tristate "VIA Technologies VT6655 support"
    depends on PCI && MAC80211 && m
+   increment MAC80211_NUM_DRIVERS
+   select MAC80211_DRIVER_NO_HWFLAGS_OPT
    ---help---
    This is a vendor-written driver for VIA VT6655.
 
