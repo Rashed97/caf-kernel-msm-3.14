@@ -91,44 +91,10 @@ static const struct file_operations reset_ops = {
 };
 #endif
 
-static const char *hw_flag_names[NUM_IEEE80211_HW_FLAGS + 1] = {
-#define FLAG(F)	[IEEE80211_HW_##F] = #F
-	FLAG(HAS_RATE_CONTROL),
-	FLAG(RX_INCLUDES_FCS),
-	FLAG(HOST_BROADCAST_PS_BUFFERING),
-	FLAG(SIGNAL_UNSPEC),
-	FLAG(SIGNAL_DBM),
-	FLAG(NEED_DTIM_BEFORE_ASSOC),
-	FLAG(SPECTRUM_MGMT),
-	FLAG(AMPDU_AGGREGATION),
-	FLAG(SUPPORTS_PS),
-	FLAG(PS_NULLFUNC_STACK),
-	FLAG(SUPPORTS_DYNAMIC_PS),
-	FLAG(MFP_CAPABLE),
-	FLAG(WANT_MONITOR_VIF),
-	FLAG(NO_AUTO_VIF),
-	FLAG(SW_CRYPTO_CONTROL),
-	FLAG(SUPPORT_FAST_XMIT),
-	FLAG(REPORTS_TX_ACK_STATUS),
-	FLAG(CONNECTION_MONITOR),
-	FLAG(QUEUE_CONTROL),
-	FLAG(SUPPORTS_PER_STA_GTK),
-	FLAG(AP_LINK_PS),
-	FLAG(TX_AMPDU_SETUP_IN_HW),
-	FLAG(SUPPORTS_RC_TABLE),
-	FLAG(P2P_DEV_ADDR_FOR_INTF),
-	FLAG(TIMING_BEACON_ONLY),
-	FLAG(SUPPORTS_HT_CCK_RATES),
-	FLAG(CHANCTX_STA_CSA),
-	FLAG(SUPPORTS_CLONED_SKBS),
-	FLAG(SINGLE_SCAN_ON_ALL_BANDS),
-	FLAG(TDLS_WIDER_BW),
-	FLAG(SUPPORTS_AMSDU_IN_AMPDU),
-	FLAG(BEACON_TX_STATUS),
-
-	/* keep last for the build bug below */
-	(void *)0x1
-#undef FLAG
+static const char *hw_flag_names[NUM_IEEE80211_HW_FLAGS] = {
+#define DEFINE_HWFLAG(_flg)	[IEEE80211_HW_##_flg] = #_flg,
+#include <net/mac80211-hwflags.h>
+#undef DEFINE_HWFLAG
 };
 
 static ssize_t hwflags_read(struct file *file, char __user *user_buf,
@@ -143,11 +109,6 @@ static ssize_t hwflags_read(struct file *file, char __user *user_buf,
 
 	if (!buf)
 		return -ENOMEM;
-
-	/* fail compilation if somebody adds or removes
-	 * a flag without updating the name array above
-	 */
-	BUILD_BUG_ON(hw_flag_names[NUM_IEEE80211_HW_FLAGS] != (void *)0x1);
 
 	for (i = 0; i < NUM_IEEE80211_HW_FLAGS; i++) {
 		if (test_bit(i, local->hw.flags))
