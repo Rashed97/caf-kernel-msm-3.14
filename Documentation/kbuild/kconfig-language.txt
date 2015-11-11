@@ -113,6 +113,13 @@ applicable everywhere (see syntax).
 	That will limit the usefulness but on the other hand avoid
 	the illegal configurations all over.
 
+- counting: "increment" <symbol> ["if" <expr>]
+  If, for some reason, it is desired to understand the number of times a
+  given symbol is selected, that can be achieved by using "increment"
+  instead of select. The <symbol> must be an int, and the default value
+  starts the count, with all "increment" statements incrementing it.
+  The note above for "select" applies here since it's very similar.
+
 - limiting menu display: "visible if" <expr>
   This attribute is only applicable to menu blocks, if the condition is
   false, the menu block is not displayed to the user (the symbols
