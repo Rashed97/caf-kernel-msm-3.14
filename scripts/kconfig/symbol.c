@@ -310,6 +310,21 @@ static struct symbol *sym_calc_choice(struct symbol *sym)
 	return def_sym;
 }
 
+static unsigned long long count_or_symbols(struct expr *e)
+{
+	switch (e->type) {
+	case E_SYMBOL:
+		sym_calc_value(e->left.sym);
+		return e->left.sym->curr.tri != no;
+	case E_OR:
+		return count_or_symbols(e->left.expr) +
+		       count_or_symbols(e->right.expr);
+	default:
+		fprintf(stderr, "warning: unexpected expression in count");
+		return 0;
+	}
+}
+
 void sym_calc_value(struct symbol *sym)
 {
 	struct symbol_value newval, oldval;
@@ -420,6 +435,15 @@ void sym_calc_value(struct symbol *sym)
 				sym_calc_value(ds);
 				newval.val = ds->curr.val;
 			}
+		}
+		if (sym->rev_dep.expr) {
+			long long val = strtoll(newval.val, NULL, 0);
+			char *buf = xmalloc(22);
+
+			val += count_or_symbols(sym->rev_dep.expr);
+			sprintf(buf, "%lld", val);
+			newval.val = buf;
+			sym->flags |= SYMBOL_WRITE;
 		}
 		break;
 	default:
@@ -1197,7 +1221,9 @@ static struct symbol *sym_check_sym_deps(struct symbol *sym)
 		goto out;
 
 	for (prop = sym->prop; prop; prop = prop->next) {
-		if (prop->type == P_CHOICE || prop->type == P_SELECT)
+		if (prop->type == P_CHOICE ||
+		    prop->type == P_SELECT ||
+		    prop->type == P_COUNT)
 			continue;
 		stack.prop = prop;
 		sym2 = sym_check_expr_deps(prop->visible.expr);
@@ -1336,6 +1362,8 @@ const char *prop_get_type_name(enum prop_type type)
 		return "choice";
 	case P_SELECT:
 		return "select";
+	case P_COUNT:
+		return "count";
 	case P_RANGE:
 		return "range";
 	case P_SYMBOL:

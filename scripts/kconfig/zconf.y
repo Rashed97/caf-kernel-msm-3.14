@@ -31,7 +31,7 @@ struct symbol *symbol_hash[SYMBOL_HASHSIZE];
 static struct menu *current_menu, *current_entry;
 
 %}
-%expect 30
+%expect 32
 
 %union
 {
@@ -76,6 +76,7 @@ static struct menu *current_menu, *current_entry;
 %token T_CLOSE_PAREN
 %token T_OPEN_PAREN
 %token T_EOL
+%token <id>T_COUNT
 
 %left T_OR
 %left T_AND
@@ -124,7 +125,7 @@ stmt_list:
 ;
 
 option_name:
-	T_DEPENDS | T_PROMPT | T_TYPE | T_SELECT | T_OPTIONAL | T_RANGE | T_DEFAULT | T_VISIBLE
+	T_DEPENDS | T_PROMPT | T_TYPE | T_SELECT | T_COUNT | T_OPTIONAL | T_RANGE | T_DEFAULT | T_VISIBLE
 ;
 
 common_stmt:
@@ -214,6 +215,12 @@ config_option: T_SELECT T_WORD if_expr T_EOL
 {
 	menu_add_symbol(P_SELECT, sym_lookup($2, 0), $3);
 	printd(DEBUG_PARSE, "%s:%d:select\n", zconf_curname(), zconf_lineno());
+};
+
+config_option: T_COUNT T_WORD if_expr T_EOL
+{
+	menu_add_symbol(P_COUNT, sym_lookup($2, 0), $3);
+	printd(DEBUG_PARSE, "%s:%d:count\n", zconf_curname(), zconf_lineno());
 };
 
 config_option: T_RANGE symbol symbol if_expr T_EOL
@@ -661,6 +668,11 @@ static void print_symbol(FILE *out, struct menu *menu)
 			break;
 		case P_SELECT:
 			fputs( "  select ", out);
+			expr_fprint(prop->expr, out);
+			fputc('\n', out);
+			break;
+		case P_COUNT:
+			fputs( "  count ", out);
 			expr_fprint(prop->expr, out);
 			fputc('\n', out);
 			break;

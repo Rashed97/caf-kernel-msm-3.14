@@ -265,6 +265,18 @@ static void sym_check_prop(struct symbol *sym)
 				    "accept arguments of boolean and "
 				    "tristate type", sym2->name);
 			break;
+		case P_COUNT:
+			sym2 = prop_get_symbol(prop);
+			if (sym->type != S_BOOLEAN && sym->type != S_TRISTATE)
+				prop_warn(prop,
+				    "config symbol '%s' uses select, but is "
+				    "not boolean or tristate", sym->name);
+			else if (sym2->type != S_INT)
+				prop_warn(prop,
+				    "'%s' has wrong type. 'count' only "
+				    "accept arguments of int type",
+				    sym2->name);
+			break;
 		case P_RANGE:
 			if (sym->type != S_INT && sym->type != S_HEX)
 				prop_warn(prop, "range is only allowed "
@@ -333,6 +345,9 @@ void menu_finalize(struct menu *parent)
 					struct symbol *es = prop_get_symbol(prop);
 					es->rev_dep.expr = expr_alloc_or(es->rev_dep.expr,
 							expr_alloc_and(expr_alloc_symbol(menu->sym), expr_copy(dep)));
+				} else if (prop->type == P_COUNT) {
+					struct symbol *es = prop_get_symbol(prop);
+					es->rev_dep.expr = expr_alloc_or(es->rev_dep.expr, expr_alloc_symbol(menu->sym));
 				}
 			}
 		}
@@ -657,10 +672,21 @@ static void get_symbol_str(struct gstr *r, struct symbol *sym,
 			str_printf(r, " && ");
 		expr_gstr_print(prop->expr, r);
 	}
+	for_all_properties(sym, prop, P_COUNT) {
+		if (!hit) {
+			str_append(r, "  Counts: ");
+			hit = true;
+		} else
+			str_printf(r, " && ");
+		expr_gstr_print(prop->expr, r);
+	}
 	if (hit)
 		str_append(r, "\n");
 	if (sym->rev_dep.expr) {
-		str_append(r, _("  Selected by: "));
+		if (sym->type != S_INT)
+			str_append(r, _("  Selected by: "));
+		else
+			str_append(r, _("  Counted by: "));
 		expr_gstr_print(sym->rev_dep.expr, r);
 		str_append(r, "\n");
 	}
