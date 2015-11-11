@@ -11,6 +11,10 @@ config MAC80211
 	  This option enables the hardware independent IEEE 802.11
 	  networking stack.
 
+config MAC80211_NUM_DRIVERS
+	int
+	depends on MAC80211
+
 comment "CFG80211 needs to be enabled for MAC80211"
 	depends on CFG80211=n
 

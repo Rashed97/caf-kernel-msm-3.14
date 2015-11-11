@@ -1,192 +1,105 @@
-config MAC80211_HW_HAS_RATE_CONTROL_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_HAS_RATE_CONTROL_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_RX_INCLUDES_FCS_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_RX_INCLUDES_FCS_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_HOST_BROADCAST_PS_BUFFERING_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_HOST_BROADCAST_PS_BUFFERING_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_SIGNAL_UNSPEC_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_SIGNAL_UNSPEC_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_SIGNAL_DBM_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_SIGNAL_DBM_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_NEED_DTIM_BEFORE_ASSOC_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_NEED_DTIM_BEFORE_ASSOC_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_SPECTRUM_MGMT_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_SPECTRUM_MGMT_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_AMPDU_AGGREGATION_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_AMPDU_AGGREGATION_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORTS_PS_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORTS_PS_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_PS_NULLFUNC_STACK_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_PS_NULLFUNC_STACK_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORTS_DYNAMIC_PS_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORTS_DYNAMIC_PS_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_MFP_CAPABLE_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_MFP_CAPABLE_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_WANT_MONITOR_VIF_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_WANT_MONITOR_VIF_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_NO_AUTO_VIF_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_NO_AUTO_VIF_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_SW_CRYPTO_CONTROL_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_SW_CRYPTO_CONTROL_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORT_FAST_XMIT_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORT_FAST_XMIT_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_REPORTS_TX_ACK_STATUS_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_REPORTS_TX_ACK_STATUS_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_CONNECTION_MONITOR_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_CONNECTION_MONITOR_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_QUEUE_CONTROL_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_QUEUE_CONTROL_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORTS_PER_STA_GTK_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORTS_PER_STA_GTK_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_AP_LINK_PS_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_AP_LINK_PS_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_TX_AMPDU_SETUP_IN_HW_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_TX_AMPDU_SETUP_IN_HW_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORTS_RC_TABLE_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORTS_RC_TABLE_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_P2P_DEV_ADDR_FOR_INTF_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_P2P_DEV_ADDR_FOR_INTF_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_TIMING_BEACON_ONLY_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_TIMING_BEACON_ONLY_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORTS_HT_CCK_RATES_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORTS_HT_CCK_RATES_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_CHANCTX_STA_CSA_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_CHANCTX_STA_CSA_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORTS_CLONED_SKBS_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORTS_CLONED_SKBS_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_SINGLE_SCAN_ON_ALL_BANDS_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_SINGLE_SCAN_ON_ALL_BANDS_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_TDLS_WIDER_BW_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_TDLS_WIDER_BW_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORTS_AMSDU_IN_AMPDU_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_SUPPORTS_AMSDU_IN_AMPDU_OFF
-	bool
-	depends on MAC80211
-config MAC80211_HW_BEACON_TX_STATUS_ON
-	bool
-	depends on MAC80211
-config MAC80211_HW_BEACON_TX_STATUS_OFF
-	bool
-	depends on MAC80211
+config MAC80211_COUNT_DRIVERS
+	int
+	default 0
+config MAC80211_HW_HAS_RATE_CONTROL
+	int
+	default 0
+config MAC80211_HW_RX_INCLUDES_FCS
+	int
+	default 0
+config MAC80211_HW_HOST_BROADCAST_PS_BUFFERING
+	int
+	default 0
+config MAC80211_HW_SIGNAL_UNSPEC
+	int
+	default 0
+config MAC80211_HW_SIGNAL_DBM
+	int
+	default 0
+config MAC80211_HW_NEED_DTIM_BEFORE_ASSOC
+	int
+	default 0
+config MAC80211_HW_SPECTRUM_MGMT
+	int
+	default 0
+config MAC80211_HW_AMPDU_AGGREGATION
+	int
+	default 0
+config MAC80211_HW_SUPPORTS_PS
+	int
+	default 0
+config MAC80211_HW_PS_NULLFUNC_STACK
+	int
+	default 0
+config MAC80211_HW_SUPPORTS_DYNAMIC_PS
+	int
+	default 0
+config MAC80211_HW_MFP_CAPABLE
+	int
+	default 0
+config MAC80211_HW_WANT_MONITOR_VIF
+	int
+	default 0
+config MAC80211_HW_NO_AUTO_VIF
+	int
+	default 0
+config MAC80211_HW_SW_CRYPTO_CONTROL
+	int
+	default 0
+config MAC80211_HW_SUPPORT_FAST_XMIT
+	int
+	default 0
+config MAC80211_HW_REPORTS_TX_ACK_STATUS
+	int
+	default 0
+config MAC80211_HW_CONNECTION_MONITOR
+	int
+	default 0
+config MAC80211_HW_QUEUE_CONTROL
+	int
+	default 0
+config MAC80211_HW_SUPPORTS_PER_STA_GTK
+	int
+	default 0
+config MAC80211_HW_AP_LINK_PS
+	int
+	default 0
+config MAC80211_HW_TX_AMPDU_SETUP_IN_HW
+	int
+	default 0
+config MAC80211_HW_SUPPORTS_RC_TABLE
+	int
+	default 0
+config MAC80211_HW_P2P_DEV_ADDR_FOR_INTF
+	int
+	default 0
+config MAC80211_HW_TIMING_BEACON_ONLY
+	int
+	default 0
+config MAC80211_HW_SUPPORTS_HT_CCK_RATES
+	int
+	default 0
+config MAC80211_HW_CHANCTX_STA_CSA
+	int
+	default 0
+config MAC80211_HW_SUPPORTS_CLONED_SKBS
+	int
+	default 0
+config MAC80211_HW_SINGLE_SCAN_ALL_BANDS
+	int
+	default 0
+config MAC80211_HW_SINGLE_SCAN_ALL_BANDS_OFF
+	int
+	default 0
+config MAC80211_HW_SINGLE_SCAN_ON_ALL_BANDS
+	int
+	default 0
+config MAC80211_HW_TDLS_WIDER_BW
+	int
+	default 0
+config MAC80211_HW_SUPPORTS_AMSDU_IN_AMPDU
+	int
+	default 0
+config MAC80211_HW_BEACON_TX_STATUS
+	int
+	default 0

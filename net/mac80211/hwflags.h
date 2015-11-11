@@ -15,11 +15,11 @@ extern struct static_key_false hwflags_keys[NUM_IEEE80211_HW_FLAGS];
 #ifdef CONFIG_JUMP_LABEL
 enum hwflags_defstates {
 #define __DEFINE_HWFLAG(_flg, _on, _off)				\
-	HWFLAGS_DEFSTATE_##_flg = -1 + ((_on) ^ (_off)) * (1 + _on),
+	HWFLAGS_DEFSTATE_##_flg = -1 + ((_on) ^ (_off)) * (1 + (_on)),
 #define DEFINE_HWFLAG(_flg)						\
 	__DEFINE_HWFLAG(_flg,						\
-			IS_ENABLED(CONFIG_MAC80211_HW_##_flg##_ON),	\
-			IS_ENABLED(CONFIG_MAC80211_HW_##_flg##_OFF))
+			CONFIG_MAC80211_HW_##_flg > 0,			\
+			CONFIG_MAC80211_HW_##_flg < CONFIG_MAC80211_NUM_DRIVERS)
 #include <net/mac80211-hwflags.h>
 #undef DEFINE_HWFLAG
 };
