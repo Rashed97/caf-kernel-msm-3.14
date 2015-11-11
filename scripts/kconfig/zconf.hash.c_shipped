@@ -118,6 +118,7 @@ struct kconf_id_strings_t
     char kconf_id_strings_str41[sizeof("source")];
     char kconf_id_strings_str42[sizeof("visible")];
     char kconf_id_strings_str43[sizeof("hex")];
+    char kconf_id_strings_str45[sizeof("count")];
     char kconf_id_strings_str46[sizeof("config")];
     char kconf_id_strings_str47[sizeof("boolean")];
     char kconf_id_strings_str51[sizeof("string")];
@@ -155,6 +156,7 @@ static const struct kconf_id_strings_t kconf_id_strings_contents =
     "source",
     "visible",
     "hex",
+    "count",
     "config",
     "boolean",
     "string",
@@ -174,7 +176,7 @@ kconf_id_lookup (register const char *str, register unsigned int len)
 {
   enum
     {
-      TOTAL_KEYWORDS = 34,
+      TOTAL_KEYWORDS = 35,
       MIN_WORD_LENGTH = 2,
       MAX_WORD_LENGTH = 14,
       MIN_HASH_VALUE = 2,
@@ -251,7 +253,9 @@ kconf_id_lookup (register const char *str, register unsigned int len)
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str42,	T_VISIBLE,	TF_COMMAND},
 #line 38 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str43,		T_TYPE,		TF_COMMAND, S_HEX},
-      {-1}, {-1},
+      {-1},
+#line 49 "scripts/kconfig/zconf.gperf"
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str45,		T_COUNT,	TF_COMMAND},
 #line 22 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str46,		T_CONFIG,	TF_COMMAND},
 #line 35 "scripts/kconfig/zconf.gperf"
@@ -289,5 +293,5 @@ kconf_id_lookup (register const char *str, register unsigned int len)
     }
   return 0;
 }
-#line 49 "scripts/kconfig/zconf.gperf"
+#line 50 "scripts/kconfig/zconf.gperf"
 
