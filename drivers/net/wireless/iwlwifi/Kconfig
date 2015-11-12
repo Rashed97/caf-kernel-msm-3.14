@@ -65,7 +65,23 @@ config IWLMVM
 	tristate "Intel Wireless WiFi MVM Firmware support"
 	select WANT_DEV_COREDUMP
 	increment MAC80211_NUM_DRIVERS
-	select MAC80211_DRIVER_NO_HWFLAGS_OPT
+	increment MAC80211_HW_SIGNAL_DBM
+	increment MAC80211_HW_SPECTRUM_MGMT
+	increment MAC80211_HW_REPORTS_TX_ACK_STATUS
+	increment MAC80211_HW_QUEUE_CONTROL
+	increment MAC80211_HW_WANT_MONITOR_VIF
+	increment MAC80211_HW_SUPPORTS_PS
+	increment MAC80211_HW_SUPPORTS_DYNAMIC_PS
+	increment MAC80211_HW_AMPDU_AGGREGATION
+	increment MAC80211_HW_TIMING_BEACON_ONLY
+	increment MAC80211_HW_CONNECTION_MONITOR
+	increment MAC80211_HW_CHANCTX_STA_CSA
+	increment MAC80211_HW_SUPPORT_FAST_XMIT
+	increment MAC80211_HW_SUPPORTS_CLONED_SKBS
+	increment MAC80211_HW_SINGLE_SCAN_ON_ALL_BANDS
+	select MAC80211_HW_MFP_CAPABLE_DYN
+	select MAC80211_HW_RX_INCLUDES_FCS_DYN
+	select MAC80211_HW_TDLS_WIDER_BW_DYN
 	help
 	  This is the driver that supports the MVM firmware. The list
 	  of the devices that use this firmware is available here:
