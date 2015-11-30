@@ -946,7 +946,7 @@ static void brcmf_escan_prep(struct brcmf_cfg80211_info *cfg,
 
 static s32
 brcmf_run_escan(struct brcmf_cfg80211_info *cfg, struct brcmf_if *ifp,
-		struct cfg80211_scan_request *request, u16 action)
+		struct cfg80211_scan_request *request)
 {
 	s32 params_size = BRCMF_SCAN_PARAMS_FIXED_SIZE +
 			  offsetof(struct brcmf_escan_params_le, params_le);
@@ -960,7 +960,7 @@ brcmf_run_escan(struct brcmf_cfg80211_info *cfg, struct brcmf_if *ifp,
 		params_size += sizeof(u32) * ((request->n_channels + 1) / 2);
 
 		/* Allocate space for populating ssids in struct */
-		params_size += sizeof(struct brcmf_ssid) * request->n_ssids;
+		params_size += sizeof(struct brcmf_ssid_le) * request->n_ssids;
 	}
 
 	params = kzalloc(params_size, GFP_KERNEL);
@@ -971,7 +971,7 @@ brcmf_run_escan(struct brcmf_cfg80211_info *cfg, struct brcmf_if *ifp,
 	BUG_ON(params_size + sizeof("escan") >= BRCMF_DCMD_MEDLEN);
 	brcmf_escan_prep(cfg, &params->params_le, request);
 	params->version = cpu_to_le32(BRCMF_ESCAN_REQ_VERSION);
-	params->action = cpu_to_le16(action);
+	params->action = cpu_to_le16(WL_ESCAN_ACTION_START);
 	params->sync_id = cpu_to_le16(0x1234);
 
 	err = brcmf_fil_iovar_data_set(ifp, "escan", params, params_size);
@@ -1013,7 +1013,7 @@ brcmf_do_escan(struct brcmf_cfg80211_info *cfg, struct wiphy *wiphy,
 	results->count = 0;
 	results->buflen = WL_ESCAN_RESULTS_FIXED_SIZE;
 
-	err = escan->run(cfg, ifp, request, WL_ESCAN_ACTION_START);
+	err = escan->run(cfg, ifp, request);
 	if (err)
 		brcmf_scan_config_mpc(ifp, 1);
 	return err;
@@ -1292,6 +1292,7 @@ brcmf_cfg80211_join_ibss(struct wiphy *wiphy, struct net_device *ndev,
 	s32 wsec = 0;
 	s32 bcnprd;
 	u16 chanspec;
+	u32 ssid_len;
 
 	brcmf_dbg(TRACE, "Enter\n");
 	if (!check_vif_up(ifp->vif))
@@ -1369,17 +1370,15 @@ brcmf_cfg80211_join_ibss(struct wiphy *wiphy, struct net_device *ndev,
 	memset(&join_params, 0, sizeof(struct brcmf_join_params));
 
 	/* SSID */
-	profile->ssid.SSID_len = min_t(u32, params->ssid_len, 32);
-	memcpy(profile->ssid.SSID, params->ssid, profile->ssid.SSID_len);
-	memcpy(join_params.ssid_le.SSID, params->ssid, profile->ssid.SSID_len);
-	join_params.ssid_le.SSID_len = cpu_to_le32(profile->ssid.SSID_len);
+	ssid_len = min_t(u32, params->ssid_len, IEEE80211_MAX_SSID_LEN);
+	memcpy(join_params.ssid_le.SSID, params->ssid, ssid_len);
+	join_params.ssid_le.SSID_len = cpu_to_le32(ssid_len);
 	join_params_size = sizeof(join_params.ssid_le);
 
 	/* BSSID */
 	if (params->bssid) {
 		memcpy(join_params.params_le.bssid, params->bssid, ETH_ALEN);
-		join_params_size = sizeof(join_params.ssid_le) +
-				   BRCMF_ASSOC_PARAMS_FIXED_SIZE;
+		join_params_size += BRCMF_ASSOC_PARAMS_FIXED_SIZE;
 		memcpy(profile->bssid, params->bssid, ETH_ALEN);
 	} else {
 		eth_broadcast_addr(join_params.params_le.bssid);
@@ -1729,7 +1728,6 @@ brcmf_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev,
 {
 	struct brcmf_cfg80211_info *cfg = wiphy_to_cfg(wiphy);
 	struct brcmf_if *ifp = netdev_priv(ndev);
-	struct brcmf_cfg80211_profile *profile = &ifp->vif->profile;
 	struct ieee80211_channel *chan = sme->channel;
 	struct brcmf_join_params join_params;
 	size_t join_params_size;
@@ -1740,6 +1738,7 @@ brcmf_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev,
 	struct brcmf_ext_join_params_le *ext_join_params;
 	u16 chanspec;
 	s32 err = 0;
+	u32 ssid_len;
 
 	brcmf_dbg(TRACE, "Enter\n");
 	if (!check_vif_up(ifp->vif))
@@ -1825,15 +1824,6 @@ brcmf_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev,
 		goto done;
 	}
 
-	profile->ssid.SSID_len = min_t(u32, (u32)sizeof(profile->ssid.SSID),
-				       (u32)sme->ssid_len);
-	memcpy(&profile->ssid.SSID, sme->ssid, profile->ssid.SSID_len);
-	if (profile->ssid.SSID_len < IEEE80211_MAX_SSID_LEN) {
-		profile->ssid.SSID[profile->ssid.SSID_len] = 0;
-		brcmf_dbg(CONN, "SSID \"%s\", len (%d)\n", profile->ssid.SSID,
-			  profile->ssid.SSID_len);
-	}
-
 	/* Join with specific BSSID and cached SSID
 	 * If SSID is zero join based on BSSID only
 	 */
@@ -1846,9 +1836,12 @@ brcmf_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev,
 		err = -ENOMEM;
 		goto done;
 	}
-	ext_join_params->ssid_le.SSID_len = cpu_to_le32(profile->ssid.SSID_len);
-	memcpy(&ext_join_params->ssid_le.SSID, sme->ssid,
-	       profile->ssid.SSID_len);
+	ssid_len = min_t(u32, sme->ssid_len, IEEE80211_MAX_SSID_LEN);
+	ext_join_params->ssid_le.SSID_len = cpu_to_le32(ssid_len);
+	memcpy(&ext_join_params->ssid_le.SSID, sme->ssid, ssid_len);
+	if (ssid_len < IEEE80211_MAX_SSID_LEN)
+		brcmf_dbg(CONN, "SSID \"%s\", len (%d)\n",
+			  ext_join_params->ssid_le.SSID, ssid_len);
 
 	/* Set up join scan parameters */
 	ext_join_params->scan_le.scan_type = -1;
@@ -1896,8 +1889,8 @@ brcmf_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev,
 	memset(&join_params, 0, sizeof(join_params));
 	join_params_size = sizeof(join_params.ssid_le);
 
-	memcpy(&join_params.ssid_le.SSID, sme->ssid, profile->ssid.SSID_len);
-	join_params.ssid_le.SSID_len = cpu_to_le32(profile->ssid.SSID_len);
+	memcpy(&join_params.ssid_le.SSID, sme->ssid, ssid_len);
+	join_params.ssid_le.SSID_len = cpu_to_le32(ssid_len);
 
 	if (sme->bssid)
 		memcpy(join_params.params_le.bssid, sme->bssid, ETH_ALEN);
@@ -2776,9 +2769,7 @@ CleanUp:
 static s32 brcmf_update_bss_info(struct brcmf_cfg80211_info *cfg,
 				 struct brcmf_if *ifp)
 {
-	struct brcmf_cfg80211_profile *profile = ndev_to_prof(ifp->ndev);
 	struct brcmf_bss_info_le *bi;
-	struct brcmf_ssid *ssid;
 	const struct brcmf_tlv *tim;
 	u16 beacon_interval;
 	u8 dtim_period;
@@ -2789,8 +2780,6 @@ static s32 brcmf_update_bss_info(struct brcmf_cfg80211_info *cfg,
 	brcmf_dbg(TRACE, "Enter\n");
 	if (brcmf_is_ibssmode(ifp->vif))
 		return err;
-
-	ssid = &profile->ssid;
 
 	*(__le32 *)cfg->extra_buf = cpu_to_le32(WL_EXTRA_BUF_MAX);
 	err = brcmf_fil_cmd_data_get(ifp, BRCMF_C_GET_BSS_INFO,
@@ -4767,7 +4756,6 @@ struct brcmf_cfg80211_vif *brcmf_alloc_vif(struct brcmf_cfg80211_info *cfg,
 	vif->wdev.iftype = type;
 
 	vif->pm_block = pm_block;
-	vif->roam_off = -1;
 
 	brcmf_init_prof(&vif->profile);
 
@@ -5317,35 +5305,33 @@ static void init_vif_event(struct brcmf_cfg80211_vif_event *event)
 	mutex_init(&event->vif_event_lock);
 }
 
-static s32
-brcmf_dongle_roam(struct brcmf_if *ifp, u32 bcn_timeout)
+static s32 brcmf_dongle_roam(struct brcmf_if *ifp)
 {
-	s32 err = 0;
+	s32 err;
+	u32 bcn_timeout;
 	__le32 roamtrigger[2];
 	__le32 roam_delta[2];
 
-	/*
-	 * Setup timeout if Beacons are lost and roam is
-	 * off to report link down
-	 */
-	if (brcmf_roamoff) {
-		err = brcmf_fil_iovar_int_set(ifp, "bcn_timeout", bcn_timeout);
-		if (err) {
-			brcmf_err("bcn_timeout error (%d)\n", err);
-			goto dongle_rom_out;
-		}
+	/* Configure beacon timeout value based upon roaming setting */
+	if (brcmf_roamoff)
+		bcn_timeout = BRCMF_DEFAULT_BCN_TIMEOUT_ROAM_OFF;
+	else
+		bcn_timeout = BRCMF_DEFAULT_BCN_TIMEOUT_ROAM_ON;
+	err = brcmf_fil_iovar_int_set(ifp, "bcn_timeout", bcn_timeout);
+	if (err) {
+		brcmf_err("bcn_timeout error (%d)\n", err);
+		goto roam_setup_done;
 	}
 
-	/*
-	 * Enable/Disable built-in roaming to allow supplicant
-	 * to take care of roaming
+	/* Enable/Disable built-in roaming to allow supplicant to take care of
+	 * roaming.
 	 */
 	brcmf_dbg(INFO, "Internal Roaming = %s\n",
 		  brcmf_roamoff ? "Off" : "On");
 	err = brcmf_fil_iovar_int_set(ifp, "roam_off", !!(brcmf_roamoff));
 	if (err) {
 		brcmf_err("roam_off error (%d)\n", err);
-		goto dongle_rom_out;
+		goto roam_setup_done;
 	}
 
 	roamtrigger[0] = cpu_to_le32(WL_ROAM_TRIGGER_LEVEL);
@@ -5354,7 +5340,7 @@ brcmf_dongle_roam(struct brcmf_if *ifp, u32 bcn_timeout)
 				     (void *)roamtrigger, sizeof(roamtrigger));
 	if (err) {
 		brcmf_err("WLC_SET_ROAM_TRIGGER error (%d)\n", err);
-		goto dongle_rom_out;
+		goto roam_setup_done;
 	}
 
 	roam_delta[0] = cpu_to_le32(WL_ROAM_DELTA);
@@ -5363,10 +5349,10 @@ brcmf_dongle_roam(struct brcmf_if *ifp, u32 bcn_timeout)
 				     (void *)roam_delta, sizeof(roam_delta));
 	if (err) {
 		brcmf_err("WLC_SET_ROAM_DELTA error (%d)\n", err);
-		goto dongle_rom_out;
+		goto roam_setup_done;
 	}
 
-dongle_rom_out:
+roam_setup_done:
 	return err;
 }
 
@@ -5686,7 +5672,8 @@ static __le16 brcmf_get_mcs_map(u32 nchain, enum ieee80211_vht_mcs_support supp)
 }
 
 static void brcmf_update_vht_cap(struct ieee80211_supported_band *band,
-				 u32 bw_cap[2], u32 nchain)
+				 u32 bw_cap[2], u32 nchain, u32 txstreams,
+				 u32 txbf_bfe_cap, u32 txbf_bfr_cap)
 {
 	__le16 mcs_map;
 
@@ -5705,6 +5692,25 @@ static void brcmf_update_vht_cap(struct ieee80211_supported_band *band,
 	mcs_map = brcmf_get_mcs_map(nchain, IEEE80211_VHT_MCS_SUPPORT_0_9);
 	band->vht_cap.vht_mcs.rx_mcs_map = mcs_map;
 	band->vht_cap.vht_mcs.tx_mcs_map = mcs_map;
+
+	/* Beamforming support information */
+	if (txbf_bfe_cap & BRCMF_TXBF_SU_BFE_CAP)
+		band->vht_cap.cap |= IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE;
+	if (txbf_bfe_cap & BRCMF_TXBF_MU_BFE_CAP)
+		band->vht_cap.cap |= IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE;
+	if (txbf_bfr_cap & BRCMF_TXBF_SU_BFR_CAP)
+		band->vht_cap.cap |= IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE;
+	if (txbf_bfr_cap & BRCMF_TXBF_MU_BFR_CAP)
+		band->vht_cap.cap |= IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE;
+
+	if ((txbf_bfe_cap || txbf_bfr_cap) && (txstreams > 1)) {
+		band->vht_cap.cap |=
+			(2 << IEEE80211_VHT_CAP_BEAMFORMEE_STS_SHIFT);
+		band->vht_cap.cap |= ((txstreams - 1) <<
+				IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_SHIFT);
+		band->vht_cap.cap |=
+			IEEE80211_VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB;
+	}
 }
 
 static int brcmf_setup_wiphybands(struct wiphy *wiphy)
@@ -5719,6 +5725,9 @@ static int brcmf_setup_wiphybands(struct wiphy *wiphy)
 	int err;
 	s32 i;
 	struct ieee80211_supported_band *band;
+	u32 txstreams = 0;
+	u32 txbf_bfe_cap = 0;
+	u32 txbf_bfr_cap = 0;
 
 	(void)brcmf_fil_iovar_int_get(ifp, "vhtmode", &vhtmode);
 	err = brcmf_fil_iovar_int_get(ifp, "nmode", &nmode);
@@ -5747,6 +5756,14 @@ static int brcmf_setup_wiphybands(struct wiphy *wiphy)
 		return err;
 	}
 
+	if (vhtmode) {
+		(void)brcmf_fil_iovar_int_get(ifp, "txstreams", &txstreams);
+		(void)brcmf_fil_iovar_int_get(ifp, "txbf_bfe_cap",
+					      &txbf_bfe_cap);
+		(void)brcmf_fil_iovar_int_get(ifp, "txbf_bfr_cap",
+					      &txbf_bfr_cap);
+	}
+
 	wiphy = cfg_to_wiphy(cfg);
 	for (i = 0; i < ARRAY_SIZE(wiphy->bands); i++) {
 		band = wiphy->bands[i];
@@ -5756,7 +5773,8 @@ static int brcmf_setup_wiphybands(struct wiphy *wiphy)
 		if (nmode)
 			brcmf_update_ht_cap(band, bw_cap, nchain);
 		if (vhtmode)
-			brcmf_update_vht_cap(band, bw_cap, nchain);
+			brcmf_update_vht_cap(band, bw_cap, nchain, txstreams,
+					     txbf_bfe_cap, txbf_bfr_cap);
 	}
 
 	return 0;
@@ -6081,7 +6099,7 @@ static s32 brcmf_config_dongle(struct brcmf_cfg80211_info *cfg)
 	brcmf_dbg(INFO, "power save set to %s\n",
 		  (power_mode ? "enabled" : "disabled"));
 
-	err = brcmf_dongle_roam(ifp, WL_BEACON_TIMEOUT);
+	err = brcmf_dongle_roam(ifp);
 	if (err)
 		goto default_conf_out;
 	err = brcmf_cfg80211_change_iface(wdev->wiphy, ndev, wdev->iftype,
