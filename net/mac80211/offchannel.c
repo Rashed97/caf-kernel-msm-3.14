@@ -916,6 +916,13 @@ int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 			kfree_skb(skb);
 			goto out_unlock;
 		}
+	} else {
+		/* Assign a dummy non-zero cookie, it's not sent to
+		 * userspace in this case but we rely on its value
+		 * internally in the need_offchan case to distinguish
+		 * mgmt-tx from remain-on-channel.
+		 */
+		*cookie = 0xffffffff;
 	}
 
 	if (!need_offchan) {
